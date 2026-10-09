@@ -1,139 +1,210 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Form Photo Maker</title>
-  <style>
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      padding: 24px 16px;
-      font-family: Arial, sans-serif;
-      background: #f3f6fb;
-      color: #182338;
-    }
-
-    main {
-      max-width: 440px;
-      margin: 30px auto;
-      padding: 24px 18px;
-      background: white;
-      border-radius: 18px;
-      box-shadow: 0 6px 24px #18233812;
-    }
-
-    h1 {
-      margin: 0 0 10px;
-      font-size: 28px;
-    }
-
-    p {
-      color: #657187;
-      line-height: 1.5;
-    }
-
-    .upload {
-      display: block;
-      margin: 24px 0;
-      padding: 22px 12px;
-      border: 2px dashed #8b9cf5;
-      border-radius: 12px;
-      text-align: center;
-      background: #f8f9ff;
-    }
-
-    input, select, button {
-      width: 100%;
-      margin-top: 12px;
-      padding: 13px;
-      font-size: 16px;
-      border-radius: 9px;
-    }
-
-    select {
-      border: 1px solid #ccd3df;
-      background: white;
-    }
-
-    button {
-      border: none;
-      background: #4355d9;
-      color: white;
-      font-weight: bold;
-    }
-
-    #preview {
-      display: none;
-      width: 100%;
-      max-height: 300px;
-      margin-top: 20px;
-      object-fit: contain;
-    }
-
-    .note {
-      font-size: 13px;
-      text-align: center;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Form Photo Maker</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:24px 16px;font-family:Arial,sans-serif;background:#f3f6fb;color:#182338}
+main{max-width:440px;margin:30px auto;padding:24px 18px;background:white;border-radius:24px;box-shadow:0 12px 35px #18233810}
+h1{font-size:32px;margin:8px 0 20px}
+.sub,.muted{color:#7b8493;line-height:1.6}
+.upload{border:2px dashed #8998e9;border-radius:18px;padding:24px 14px;text-align:center;background:#f8f9ff;margin:22px 0}
+input[type=file]{max-width:100%;margin-top:20px}
+label{display:block;margin:22px 0 10px;color:#596579}
+select,button{width:100%;padding:16px;border-radius:12px;font-size:16px}
+select{border:1px solid #ccd2dc;background:white}
+button{border:0;background:#4654df;color:white;font-weight:bold;margin-top:20px;cursor:pointer}
+button:disabled{opacity:.55}
+img{display:block;max-width:100%;max-height:420px;object-fit:contain;margin:22px auto;border-radius:6px}
+#result{display:none}
+#status{line-height:1.6;overflow-wrap:anywhere}
+.download{display:block;text-align:center;background:#14804a;color:white;padding:16px;border-radius:12px;text-decoration:none;font-weight:bold;margin-top:16px}
+footer{text-align:center;margin:26px 0 4px;color:#7b8493;line-height:1.6}
+</style>
 </head>
 <body>
-  <main>
-    <h1>Form Photo Maker</h1>
-    <p>Get your photo ready for online forms.</p>
+<main>
+<h1>Form Photo Maker</h1>
+<p class="sub">Get your photo ready for online forms.</p>
 
-    <label class="upload">
-      <strong>Choose your photo</strong>
-      <input id="photo" type="file" accept="image/*">
-    </label>
+<div class="upload">
+<strong>Choose your photo</strong><br>
+<input id="photo" type="file" accept="image/jpeg,image/png,image/webp">
+</div>
 
-    <label for="size">Maximum file size</label>
-    <select id="size">
-      <option value="20">20 KB</option>
-      <option value="50" selected>50 KB</option>
-      <option value="100">100 KB</option>
-      <option value="200">200 KB</option>
-    </select>
+<label for="limit">Maximum file size</label>
+<select id="limit">
+<option value="20">20 KB</option>
+<option value="50" selected>50 KB</option>
+<option value="100">100 KB</option>
+<option value="200">200 KB</option>
+</select>
 
-    <button id="make" type="button">MAKE PHOTO READY</button>
+<button id="make" disabled>MAKE PHOTO READY</button>
+<p id="status" class="muted" aria-live="polite">Choose a photo to begin.</p>
 
-    <img id="preview" alt="Selected photo preview">
-    <p id="status" role="status">Your photo preview will appear here.</p>
-    <p class="note">Simple. Free to use. No account needed.</p>
-  </main>
+<div id="result">
+<img id="preview" alt="Compressed photo preview">
+<p id="details" class="muted"></p>
+<a id="download" class="download" download="compressed-photo.jpg">DOWNLOAD PHOTO</a>
+</div>
 
-  <script>
-    const photo = document.getElementById("photo");
-    const preview = document.getElementById("preview");
-    const status = document.getElementById("status");
+<footer>Simple. Free to use. No account needed.</footer>
+</main>
 
-    photo.addEventListener("change", () => {
-      const file = photo.files[0];
+<script>
+const photo = document.getElementById('photo');
+const make = document.getElementById('make');
+const limit = document.getElementById('limit');
+const statusText = document.getElementById('status');
+const result = document.getElementById('result');
+const preview = document.getElementById('preview');
+const details = document.getElementById('details');
+const download = document.getElementById('download');
 
-      if (!file) return;
+let selectedFile = null;
+let previewURL = null;
 
-      if (!file.type.startsWith("image/")) {
-        status.textContent = "Please choose an image file.";
-        return;
-      }
+function formatSize(bytes) {
+  return bytes < 1024
+    ? bytes + ' bytes'
+    : (bytes / 1024).toFixed(1) + ' KB';
+}
 
-      preview.src = URL.createObjectURL(file);
-      preview.style.display = "block";
-      status.textContent =
-        "Photo selected: " + file.name +
-        " (" + Math.round(file.size / 1024) + " KB).";
+photo.addEventListener('change', () => {
+  selectedFile = photo.files[0] || null;
+  result.style.display = 'none';
+
+  if (previewURL) URL.revokeObjectURL(previewURL);
+  previewURL = null;
+
+  if (!selectedFile) {
+    make.disabled = true;
+    statusText.textContent = 'Choose a photo to begin.';
+    return;
+  }
+
+  if (!selectedFile.type.startsWith('image/')) {
+    selectedFile = null;
+    make.disabled = true;
+    statusText.textContent = 'Please choose an image file.';
+    return;
+  }
+
+  previewURL = URL.createObjectURL(selectedFile);
+  preview.src = previewURL;
+  result.style.display = 'block';
+  details.textContent = 'Original size: ' + formatSize(selectedFile.size);
+  statusText.textContent = 'Photo selected. Ready to compress.';
+  make.disabled = false;
+});
+
+function makeBlob(canvas, quality) {
+  return new Promise(resolve => {
+    canvas.toBlob(resolve, 'image/jpeg', quality);
+  });
+}
+
+make.addEventListener('click', async () => {
+  if (!selectedFile) return;
+
+  make.disabled = true;
+  result.style.display = 'none';
+  statusText.textContent = 'Compressing your photo… please wait.';
+
+  try {
+    const image = new Image();
+    const imageURL = URL.createObjectURL(selectedFile);
+
+    image.src = imageURL;
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = reject;
     });
 
-    document.getElementById("make").addEventListener("click", () => {
-      if (!photo.files.length) {
-        status.textContent = "Please choose a photo first.";
-        return;
+    let width = image.naturalWidth;
+    let height = image.naturalHeight;
+
+    const maxDimension = 2400;
+    if (Math.max(width, height) > maxDimension) {
+      const scale = maxDimension / Math.max(width, height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+    }
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const target = Number(limit.value) * 1024;
+    let bestBlob = null;
+    let finished = false;
+
+    for (let pass = 0; pass < 12; pass++) {
+      canvas.width = width;
+      canvas.height = height;
+
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, width, height);
+      context.drawImage(image, 0, 0, width, height);
+
+      const qualities = [
+        0.92, 0.85, 0.78, 0.70,
+        0.62, 0.55, 0.48, 0.40, 0.32
+      ];
+
+      for (const quality of qualities) {
+        const blob = await makeBlob(canvas, quality);
+        if (!blob) throw new Error('Could not create the image.');
+
+        if (!bestBlob || blob.size < bestBlob.size) {
+          bestBlob = blob;
+        }
+
+        if (blob.size <= target) {
+          bestBlob = blob;
+          finished = true;
+          break;
+        }
       }
 
-      status.textContent =
-        "Photo selected! Compression is the next feature we will add.";
-    });
-  </script>
+      if (finished || Math.min(width, height) < 160) break;
+
+      width = Math.max(1, Math.round(width * 0.85));
+      height = Math.max(1, Math.round(height * 0.85));
+    }
+
+    URL.revokeObjectURL(imageURL);
+
+    if (!bestBlob) throw new Error('Compression failed.');
+
+    const outputURL = URL.createObjectURL(bestBlob);
+    if (previewURL) URL.revokeObjectURL(previewURL);
+    previewURL = outputURL;
+
+    preview.src = outputURL;
+    download.href = outputURL;
+    download.download = 'compressed-photo.jpg';
+    result.style.display = 'block';
+
+    details.textContent =
+      'Original: ' + formatSize(selectedFile.size) +
+      ' | New: ' + formatSize(bestBlob.size);
+
+    if (bestBlob.size <= target) {
+      statusText.textContent = 'Success! Your photo is within the selected size limit.';
+    } else {
+      statusText.textContent =
+        'Compressed, but the selected size limit could not be reached. Try a larger limit.';
+    }
+  } catch (error) {
+    statusText.textContent =
+      'Something went wrong. Please try another photo.';
+  } finally {
+    make.disabled = false;
+  }
+});
+</script>
 </body>
 </html>
