@@ -124,7 +124,17 @@ make.addEventListener('click', async () => {
       image.onload = resolve;
       image.onerror = reject;
     });
-
+if (selectedFile.size <= Number(limit.value) * 1000 * 0.96) {
+  preview.src = imageURL;
+  previewURL = imageURL;
+  download.href = imageURL;
+  download.download = selectedFile.name || 'photo.jpg';
+  result.style.display = 'block';
+  details.textContent = 'Original size: ' + formatSize(selectedFile.size);
+  statusText.textContent = 'Success! Your photo is already within the selected size limit.';
+  make.disabled = false;
+  return;
+    }
     let width = image.naturalWidth;
     let height = image.naturalHeight;
 
