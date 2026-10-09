@@ -1,16 +1,139 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Form Photo Maker</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px 16px;
+      font-family: Arial, sans-serif;
+      background: #f3f6fb;
+      color: #182338;
+    }
+
+    main {
+      max-width: 440px;
+      margin: 30px auto;
+      padding: 24px 18px;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 6px 24px #18233812;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 28px;
+    }
+
+    p {
+      color: #657187;
+      line-height: 1.5;
+    }
+
+    .upload {
+      display: block;
+      margin: 24px 0;
+      padding: 22px 12px;
+      border: 2px dashed #8b9cf5;
+      border-radius: 12px;
+      text-align: center;
+      background: #f8f9ff;
+    }
+
+    input, select, button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px;
+      font-size: 16px;
+      border-radius: 9px;
+    }
+
+    select {
+      border: 1px solid #ccd3df;
+      background: white;
+    }
+
+    button {
+      border: none;
+      background: #4355d9;
+      color: white;
+      font-weight: bold;
+    }
+
+    #preview {
+      display: none;
+      width: 100%;
+      max-height: 300px;
+      margin-top: 20px;
+      object-fit: contain;
+    }
+
+    .note {
+      font-size: 13px;
+      text-align: center;
+    }
+  </style>
 </head>
-
 <body>
-  <h1>Form Photo Maker</h1>
-  <p>Make your photo ready for online forms.</p>
+  <main>
+    <h1>Form Photo Maker</h1>
+    <p>Get your photo ready for online forms.</p>
 
-  <input type="file" accept="image/*">
+    <label class="upload">
+      <strong>Choose your photo</strong>
+      <input id="photo" type="file" accept="image/*">
+    </label>
 
+    <label for="size">Maximum file size</label>
+    <select id="size">
+      <option value="20">20 KB</option>
+      <option value="50" selected>50 KB</option>
+      <option value="100">100 KB</option>
+      <option value="200">200 KB</option>
+    </select>
+
+    <button id="make" type="button">MAKE PHOTO READY</button>
+
+    <img id="preview" alt="Selected photo preview">
+    <p id="status" role="status">Your photo preview will appear here.</p>
+    <p class="note">Simple. Free to use. No account needed.</p>
+  </main>
+
+  <script>
+    const photo = document.getElementById("photo");
+    const preview = document.getElementById("preview");
+    const status = document.getElementById("status");
+
+    photo.addEventListener("change", () => {
+      const file = photo.files[0];
+
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        status.textContent = "Please choose an image file.";
+        return;
+      }
+
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = "block";
+      status.textContent =
+        "Photo selected: " + file.name +
+        " (" + Math.round(file.size / 1024) + " KB).";
+    });
+
+    document.getElementById("make").addEventListener("click", () => {
+      if (!photo.files.length) {
+        status.textContent = "Please choose a photo first.";
+        return;
+      }
+
+      status.textContent =
+        "Photo selected! Compression is the next feature we will add.";
+    });
+  </script>
 </body>
 </html>
